@@ -1,0 +1,69 @@
+# =============================================================================
+# Sentinel Incident Comment Write-back - Security Copilot Custom Plugin
+#
+# Description:  Standalone plugin for ad-hoc prompt bar invocation of the
+#               AddIncidentComment skill. Invoke with /AddIncidentComment
+#               in the Security Copilot prompt bar.
+#
+# NOTE:         This standalone plugin is for manual/prompt-bar use ONLY.
+#               For agent runtime use, the LogicApp SkillGroup must be
+#               embedded directly in each agent's manifest YAML due to a
+#               platform limitation with cross-plugin skill resolution for
+#               LogicApp-format skills.
+#
+# Author:       @rohit8096-ag
+# Repository:   https://github.com/rohit8096-ag
+#
+# Prerequisites:
+#   - SecCopilot-AddIncidentComment Logic App deployed and configured
+#   - Logic App managed identity granted Microsoft Sentinel Responder role
+#
+# Configuration:
+#   Replace all <YOUR-*> placeholder values with your environment-specific
+#   values before uploading to Security Copilot.
+#
+#   <YOUR-SUBSCRIPTION-ID>   - Azure subscription ID (GUID)
+#   <YOUR-RESOURCE-GROUP>    - Resource group containing Sentinel workspace
+# =============================================================================
+
+Descriptor:
+  Name: IncidentCommentWriteback
+  DisplayName: Sentinel Incident Comment Write-back
+  Description: >-
+    Persists Security Copilot agent investigation output to a Microsoft
+    Sentinel incident as a comment (automatically synced to the Defender XDR
+    portal). Intended to be called by investigation agents as the mandatory
+    final step of an incident investigation workflow.
+
+SkillGroups:
+  - Format: LogicApp
+    Skills:
+      - Name: AddIncidentComment
+        DisplayName: Add Incident Comment
+        Description: >-
+          Adds a comment to a Microsoft Sentinel incident. The comment is
+          automatically synchronized to the same incident in the Defender XDR
+          portal. Requires the full ARM resource ID of the Sentinel incident
+          and the complete report text to post. Use this skill as the final
+          step after completing an incident investigation to write the full,
+          verbatim investigation report onto the incident. Returns a JSON
+          status object confirming success or failure.
+        Inputs:
+          - Name: IncidentArmId
+            Description: >-
+              Full Azure Resource Manager ID of the Sentinel incident, in the
+              form /subscriptions/{subId}/resourceGroups/{rg}/providers/
+              Microsoft.OperationalInsights/workspaces/{workspace}/providers/
+              Microsoft.SecurityInsights/incidents/{incidentGuid}
+            Required: true
+          - Name: CommentBody
+            Description: >-
+              The complete investigation report text to post as the incident
+              comment. Pass the full report verbatim; do not truncate or
+              summarize.
+            Required: true
+        Settings:
+          SubscriptionId: '<YOUR-SUBSCRIPTION-ID>'
+          ResourceGroup: '<YOUR-RESOURCE-GROUP>'
+          WorkflowName: 'SecCopilot-AddIncidentComment'
+          TriggerName: 'manual'
